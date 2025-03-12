@@ -9,7 +9,7 @@ def run_command(command):
         return result.stdout
     except subprocess.CalledProcessError as e:
         return f"An error occurred: {e.stderr}"
-    
+
 def check_and_install(packages):
     missing_packages = []
     for package in packages:
@@ -37,14 +37,19 @@ def nmap_scan(ip, port_select, low_port, high_port, save, current_time):
         command += f" -oN {filename}"
     return command
 
-def dirb_scan(ip, dirb_url, use_extensions, extensions, wordlist_input, save_output, current_time):
+def dirb_scan(ip, port, dirb_url, use_extensions, extensions, wordlist_input, save_output, current_time):
     command = "dirb"
     filename = f"scan_dirb_{ip}_{current_time}.txt"
-    if dirb_url == "http":
-        command += f" http://{ip}"
-    elif dirb_url == "https":
-        command += f" https://{ip}"
-
+    if port:
+        if dirb_url == "http":
+            command += f" http://{ip}:{port}"
+        elif dirb_url == "https":
+            command += f" https://{ip}:{port}"
+    if not port:
+        if dirb_url == "http":
+            command += f" http://{ip}"
+        elif dirb_url == "https":
+            command += f" https://{ip}"
     if wordlist_input == "big":
         command += " wordlists/big.txt"
     elif wordlist_input == "small":
@@ -154,7 +159,7 @@ if __name__ == "__main__":
 
     if use_dirb == "y":
         while True:
-            dirb_url = input("http or https: ")
+            dirb_url = input("http or https? blank will default to http: ")
             if dirb_url == "":
                 dirb_url = "http"
             if dirb_url in ["http", "https"]:
@@ -164,7 +169,9 @@ if __name__ == "__main__":
 
         #check if user wants to use big or small wordlist#
         while True:
-            wordlist_input = input("Which word list would you like to use, big or small? ")
+            wordlist_input = input("Which word list would you like to use, big or small? blank will default to small: ")
+            if wordlist_input == "":
+                wordlist_input = "small"
             if wordlist_input in ["big", "small"]:
                 break
             else:
@@ -182,12 +189,18 @@ if __name__ == "__main__":
 
         if use_extensions == "y":
             #pick extension#
-            basic = ["php", "txt", "html"]
-            intermediate = ["php", "html", "js", "txt", "bak"]
-            advanced = ["php", "html", "js", "txt", "bak", "sql", "zip", "json", "xml", "log"]
+            basic = ["/","php", "txt", "html"]
+            intermediate = ["/","php", "html", "js", "txt", "bak"]
+            advanced = ["/","php", "html", "js", "txt", "bak", "sql", "zip", "json", "xml", "log"]
             file = ["file"]
             custom = []
             while True:
+                print ("_________________________________________________________")
+                print ("Basic: php, txt, html")
+                print ("Intermediate: php, html, js, txt, bak")
+                print ("Advanced: php, html, js, txt, bak, sql, zip, json, xml, log")
+                print ("File: is DirBusters extensions_common.txt")
+                print ("_________________________________________________________")
                 extension = input("Enter the extension you want to use (basic, intermediate, advanced, file, custom): ")
                 if extension == "basic":
                     extensions = basic
@@ -221,9 +234,33 @@ if __name__ == "__main__":
         print(f"Running command: {nmap_command}")
         output = run_command(nmap_command)
         print(output)
+        print ("_________________________________________________________")
 
+    while True:
+        port_choice = input("Would you like to scan a specific port for dirb? (y/n) Blank will default to n: ")
+        if port_choice == "":
+            port_choice = "n"
+        if port_choice == "y":
+            port_input = input("Input port for dirb scan (0-65535): ")
+            try:
+                port_input = int(port_input)
+                if 0 <= port_input <= 65535:
+                    port = port_input
+                    break
+                else:
+                    print("Please enter a valid port number between 0 and 65535")
+            except ValueError:
+                print("Please enter a valid port number between 0 and 65535")
+        elif port_choice == "n":
+            port = ""
+            break
+        else:
+            print("Please enter 'y' or 'n' or leave blank for default to n")
+            
     if use_dirb == "y":
-        dirb_command = dirb_scan(ip_address, dirb_url, use_extensions, extensions, wordlist_input, save_output, current_time)
+        print ("_________________________________________________________")
+        dirb_command = dirb_scan(ip_address, port, dirb_url, use_extensions, extensions, wordlist_input, save_output, current_time)
         print(f"Running command: {dirb_command}")
         output = run_command(dirb_command)
         print(output)
+        print ("_________________________________________________________")
