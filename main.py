@@ -1,6 +1,7 @@
 import subprocess
 from datetime import datetime
 import ipaddress
+import sys
 
 def run_command(command):
     try:
@@ -8,6 +9,21 @@ def run_command(command):
         return result.stdout
     except subprocess.CalledProcessError as e:
         return f"An error occurred: {e.stderr}"
+    
+def check_and_install(packages):
+    missing_packages = []
+    for package in packages:
+        try:
+            subprocess.run([package, '--version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            print(f"{package} is already installed.")
+        except subprocess.CalledProcessError:
+            missing_packages.append(package)
+    
+    if missing_packages:
+        print("The following packages are not installed. Please install them using the following commands:")
+        for package in missing_packages:
+            print(f"sudo apt-get install -y {package}")
+        sys.exit(1)
 
 def nmap_scan(ip, port_select, low_port, high_port, save, current_time):
     filename = f"nmap_scan_{ip}_{current_time}.txt"
@@ -50,6 +66,10 @@ def dirb_scan(ip, dirb_url, use_extensions, extensions, wordlist_input, save_out
 
 #main block#
 if __name__ == "__main__":
+
+    #check if nmap and dirb are installed#
+    check_and_install(['nmap', 'dirb'])
+
     #create current time var#
     current_time = datetime.now().strftime("%H%M%S")
 
