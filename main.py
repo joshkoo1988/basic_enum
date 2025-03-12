@@ -9,8 +9,7 @@ def run_command(command):
     except subprocess.CalledProcessError as e:
         return f"An error occurred: {e.stderr}"
 
-def nmap_scan(ip, port_select, low_port, high_port, save):
-    current_time = datetime.now().strftime("%H%M%S")
+def nmap_scan(ip, port_select, low_port, high_port, save, current_time):
     filename = f"nmap_scan_{ip}_{current_time}.txt"
     command = "nmap"
 
@@ -21,63 +20,188 @@ def nmap_scan(ip, port_select, low_port, high_port, save):
 
     if save == "y" or save == "":
         command += f" -oN {filename}"
-
     return command
 
-if __name__ == "__main__":
-    while True:
-        ip_address = input("Enter the IP address: ")
-        if not ip_address:
-            print("Please provide an IP address")
-            continue
-        try:
-            ipaddress.ip_address(ip_address)
-            break
-        except ValueError:
-            print("Please provide a valid IP address")
+def dirb_scan(ip, dirb_url, use_extensions, extensions, wordlist_input, save_output, current_time):
+    command = "dirb"
+    filename = f"dirb_scan_{ip}_{current_time}.txt"
+    if dirb_url == "http":
+        command += f" http://{ip}"
+    elif dirb_url == "https":
+        command += f" https://{ip}"
 
-    while True:
-        port_select = input("Do you want to scan a specific port? (y/n) Blank will use default port: ")
-        if port_select in ["y", "n", ""]:
-            break
+    if wordlist_input == "big":
+        command += " wordlists/big.txt"
+    elif wordlist_input == "small":
+        command += " wordlists/small.txt"
+
+    if use_extensions == "y":
+        if extensions == "file":
+            command += " -x wordlists/extensions_common.txt"
         else:
-            print("Please enter 'y' or 'n'")
+            command += f" -X {','.join(extensions)}"
+        
+    elif use_extensions == "n" or use_extensions == "":
+        pass
 
-    if port_select == "y":
-        while True:
-            low_port_range = input("Enter lower port range (default to 0): ")
-            if not low_port_range:
-                low_port_range = 0
-            try:
-                low_port_range = int(low_port_range)
-                break
-            except ValueError:
-                print("Please provide a valid port number")
+    if save_output == "y" or save_output == "":
+        command += f" -o {filename}"
+    return command
 
-        while True:
-            high_port_range = input("Enter higher port range (default to 65535): ")
-            if not high_port_range:
-                high_port_range = 65535
-            try:
-                high_port_range = int(high_port_range)
-                if high_port_range >= low_port_range:
-                    break
-                else:
-                    print("High port range must be greater than or equal to low port range")
-            except ValueError:
-                print("Please provide a valid port number")
-    else:
-        low_port_range = 0
-        high_port_range = 65535
+#main block#
+if __name__ == "__main__":
+    #create current time var#
+    current_time = datetime.now().strftime("%H%M%S")
 
     while True:
-        save_output = input("Do you want to save the output to a file? (y/n) Blank will default to y: ")
-        if save_output in ["y", "n", ""]:
+        use_nmap = input("Do you want to run an nmap scan? (y/n) Blank will default to y: ")
+        if use_nmap == "":
+            use_nmap = "y"
+        if use_nmap in ["y", "n"]:
             break
         else:
             print("Please enter 'y' or 'n' or leave blank for default to y")
 
-    nmap_command = nmap_scan(ip_address, port_select, low_port_range, high_port_range, save_output)
-    print(f"Running command: {nmap_command}")
-    output = run_command(nmap_command)
-    print(output)
+    while True:
+        use_dirb = input("Do you want to run a dirb scan? (y/n) Blank will default to y: ")
+        if use_dirb == "":
+            use_dirb = "y"
+        if use_dirb in ["y", "n"]:
+            break
+        else:
+            print("Please enter 'y' or 'n' or leave blank for default to y")
+
+    #check if ip is valid#
+    if use_nmap == "y" or use_dirb == "y":
+        while True:
+            ip_address = input("Enter the IP address: ")
+            if not ip_address:
+                print("Please provide an IP address")
+                continue
+            try:
+                ipaddress.ip_address(ip_address)
+                break
+            except ValueError:
+                print("Please provide a valid IP address")
+
+    #check if port is valid#
+    if use_nmap == "y":
+        while True:
+            port_select = input("Do you want to scan a specific port for nmap? (y/n) Blank will use default port: ")
+            if port_select == "":
+                port_select = "y"
+            if port_select in ["y", "n"]:
+                break
+            else:
+                print("Please enter 'y' or 'n'")
+        #check if port range is valid#
+        if port_select == "y":
+            while True:
+                low_port_range = input("Enter lower port range (default to 0): ")
+                if not low_port_range:
+                    low_port_range = 0
+                try:
+                    low_port_range = int(low_port_range)
+                    break
+                except ValueError:
+                    print("Please provide a valid port number")
+
+            while True:
+                high_port_range = input("Enter higher port range (default to 65535): ")
+                if not high_port_range:
+                    high_port_range = 65535
+                try:
+                    high_port_range = int(high_port_range)
+                    if high_port_range >= low_port_range:
+                        break
+                    else:
+                        print("High port range must be greater than or equal to low port range")
+                except ValueError:
+                    print("Please provide a valid port number")
+        else:
+            low_port_range = 0
+            high_port_range = 65535
+
+    #check if user wants to save output#
+    if use_nmap == "y" or use_dirb == "y":
+        while True:
+            save_output = input("Do you want to save the output to a file? (y/n) Blank will default to y: ")
+            if save_output == "":
+                save_output = "y"
+            if save_output in ["y", "n"]:
+                break
+            else:
+                print("Please enter 'y' or 'n' or leave blank for default to y")
+
+    if use_dirb == "y":
+        while True:
+            dirb_url = input("http or https: ")
+            if dirb_url in ["http", "https"]:
+                break
+            else:
+                print("Please enter 'http' or 'https'")
+
+        #check if user wants to use big or small wordlist#
+        while True:
+            wordlist_input = input("Which word list would you like to use, big or small? ")
+            if wordlist_input in ["big", "small"]:
+                break
+            else:
+                print("Please enter 'big' or 'small'")
+
+        #check if you want to add extensions#
+        while True:
+            use_extensions = input("Do you want to specify extensions? (y/n) Blank will default to n: ")
+            if use_extensions == "":
+                use_extensions = "n"
+            if use_extensions in ["y", "n"]:
+                break
+            else:
+                print("Please enter 'y' or 'n'")
+
+        if use_extensions == "y":
+            #pick extension#
+            basic = ["php", "txt", "html"]
+            intermediate = ["php", "html", "js", "txt", "bak"]
+            advanced = ["php", "html", "js", "txt", "bak", "sql", "zip", "json", "xml", "log"]
+            file = ["file"]
+            custom = []
+            while True:
+                extension = input("Enter the extension you want to use (basic, intermediate, advanced, file, custom): ")
+                if extension == "basic":
+                    extensions = basic
+                    break
+                elif extension == "intermediate":
+                    extensions = intermediate
+                    break
+                elif extension == "advanced":
+                    extensions = advanced
+                    break
+                elif extension == "file":
+                    extensions = file
+                    break
+                elif extension == "custom":
+                    while True:
+                        entry = input("Enter extensions one at a time, enter blank to exit: ").strip().replace(".", "")
+                        if entry == "":
+                            break
+                        else:
+                            custom.append(entry)
+                    extensions = custom
+                    break
+                else:
+                    print("Please enter a valid extension type")
+        else:
+            extensions = []
+
+    if use_nmap == "y":
+        nmap_command = nmap_scan(ip_address, port_select, low_port_range, high_port_range, save_output, current_time)
+        print(f"Running command: {nmap_command}")
+        output = run_command(nmap_command)
+        print(output)
+
+    if use_dirb == "y":
+        dirb_command = dirb_scan(ip_address, dirb_url, use_extensions, extensions, wordlist_input, save_output, current_time)
+        print(f"Running command: {dirb_command}")
+        output = run_command(dirb_command)
+        print(output)
