@@ -14,19 +14,18 @@ def check_and_install(packages):
     missing_packages = []
     for package in packages:
         try:
-            subprocess.run([package, '--version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            print(f"{package} is already installed.")
+            subprocess.run(['which', package], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         except subprocess.CalledProcessError:
             missing_packages.append(package)
     
     if missing_packages:
         print("The following packages are not installed. Please install them using the following commands:")
         for package in missing_packages:
-            print(f"sudo apt-get install -y {package}")
+            print(f"sudo apt install -y {package}")
         sys.exit(1)
 
 def nmap_scan(ip, port_select, low_port, high_port, save, current_time):
-    filename = f"nmap_scan_{ip}_{current_time}.txt"
+    filename = f"scan_nmap_{ip}_{current_time}.txt"
     command = "nmap"
 
     if port_select == "y":
@@ -40,7 +39,7 @@ def nmap_scan(ip, port_select, low_port, high_port, save, current_time):
 
 def dirb_scan(ip, dirb_url, use_extensions, extensions, wordlist_input, save_output, current_time):
     command = "dirb"
-    filename = f"dirb_scan_{ip}_{current_time}.txt"
+    filename = f"scan_dirb_{ip}_{current_time}.txt"
     if dirb_url == "http":
         command += f" http://{ip}"
     elif dirb_url == "https":
@@ -109,7 +108,7 @@ if __name__ == "__main__":
         while True:
             port_select = input("Do you want to scan a specific port for nmap? (y/n) Blank will use default port: ")
             if port_select == "":
-                port_select = "y"
+                port_select = "n"
             if port_select in ["y", "n"]:
                 break
             else:
@@ -156,6 +155,8 @@ if __name__ == "__main__":
     if use_dirb == "y":
         while True:
             dirb_url = input("http or https: ")
+            if dirb_url == "":
+                dirb_url = "http"
             if dirb_url in ["http", "https"]:
                 break
             else:
@@ -207,6 +208,7 @@ if __name__ == "__main__":
                             break
                         else:
                             custom.append(entry)
+                            print(f"Extensions so far: {custom}")
                     extensions = custom
                     break
                 else:
