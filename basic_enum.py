@@ -169,13 +169,13 @@ if __name__ == "__main__":
 
         #check if user wants to use big or small wordlist#
         while True:
-            wordlist_input = input("Which word list would you like to use, big or small? blank will default to small: ")
+            wordlist_input = input("Which word list would you like to use, big or small? blank will default to common: ")
             if wordlist_input == "":
-                wordlist_input = "small"
-            if wordlist_input in ["big", "small"]:
+                wordlist_input = "common"
+            if wordlist_input in ["big", "small", "common"]:
                 break
             else:
-                print("Please enter 'big' or 'small'")
+                print("Please enter 'big' 'small' or 'common'")
 
         #check if you want to add extensions#
         while True:
